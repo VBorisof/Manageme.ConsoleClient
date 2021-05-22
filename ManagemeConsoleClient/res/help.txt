@@ -1,0 +1,15 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Manageme Console Client v.0.1.0
+
+Controls:
+  - A        -- Add item.
+  - D        -- Delete item.
+  - J/Down   -- Select next item.
+  - K/Up     -- Select previous item.
+  - Ret/Spce -- Toggle item complete.
+  - X        -- Quit.
+  - H        -- Display this help menu.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Press any key to close this help screen.
+
