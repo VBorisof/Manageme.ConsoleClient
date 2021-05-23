@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ManagemeConsoleClient.Client;
 using ManagemeConsoleClient.Forms;
@@ -11,7 +13,7 @@ namespace ManagemeConsoleClient.App
 {
     public class App
     {
-        public bool IsRunning { get; set; }
+        private AppState _state { get; set; }
 
         private int _selectedTodoIndex = 0;
         private List<TodoViewModel> _categoryTodos;
@@ -20,7 +22,9 @@ namespace ManagemeConsoleClient.App
         private List<CategoryViewModel> _categories;
 
         private ManagemeHttpClient _client;
-        
+       
+        private Window _popup;
+
         public async Task InitAsync()
         {
             _client = new ManagemeHttpClient();
@@ -30,43 +34,113 @@ namespace ManagemeConsoleClient.App
 
             _currentCategory = _categories.First();
             _categoryTodos = await _client.GetTodosAsync(_currentCategory.Id);
+
+            await OpenPopup();
+        }
+
+        public async Task OpenPopup()
+        {
+            var reminders = await _client.GetRemindersAsync();
+
+            _popup = new ReminderPopup(
+                _client,
+                reminders,
+                5, 2, Console.WindowWidth - 10, 20
+            );
+            _popup.IsOpen = true;
+            _state = AppState.Popup;
         }
 
         public async Task RunAsync()
         {
-            IsRunning = true;
             Console.Clear();
             Console.CursorVisible = false;
 
-            while (IsRunning)
-            {
-                _categoryTodos = await _client.GetTodosAsync(_currentCategory.Id);
-                if (_selectedTodoIndex < 0 
-                    || _selectedTodoIndex >= _categoryTodos.Count)
+            var updateThread = 
+                new Thread(async () =>
                 {
-                    _selectedTodoIndex = 0;
+                    while (_state != AppState.Stopped)
+                    {
+                        if (_state == AppState.Running)
+                        {
+                            await UpdateAsync();
+                        }
+                        Thread.Sleep(5000);
+                    }
                 }
+            );
+            updateThread.Start();
 
+            var renderThread = 
+                new Thread(() =>
+                {
+                    while (_state != AppState.Stopped)
+                    {
+                        if (_state == AppState.Running)
+                        {
+                            Render();
+                        }
+                        Thread.Sleep(5000);
+                    }
+                }
+            );
+            renderThread.Start();
+
+            while (_state != AppState.Stopped)
+            {
+                await UpdateAsync();
                 Render();
+
+                if (_state == AppState.Popup)
+                {
+                    _popup.Render();
+                }
 
                 var key = Console.ReadKey(intercept: true);
 
                 await ProcessKeyAsync(key.Key);
             }
-            
+           
+            updateThread.Join();
+            renderThread.Join();
+
             Console.Clear();
             Console.CursorVisible = true;
         }
 
-        private void Render()
+        private void Clear()
         {
             Console.SetCursorPosition(0, 0);
 
-            Console.WriteLine("".PadRight(Console.WindowWidth, '='));
+            var sb = new StringBuilder();
+            var clearStr = "".PadRight(Console.WindowWidth);
+            for (int i = 0; i <= Console.WindowHeight; ++i)
+            {
+                sb.AppendLine(clearStr);
+            }
 
-            Console.WriteLine($"{_currentCategory.Name}:".PadRight(Console.WindowWidth));
+            Console.Write(sb);
+
+            Console.SetCursorPosition(0, 0);
+        }
+
+        private void Render()
+        {
+            Clear();
+
+            var separator = "".PadRight(Console.WindowWidth, '=');
+
+            // Print the bottom first -- works better.
+            Console.SetCursorPosition(0, Console.WindowHeight - 2);
+
+            Console.WriteLine(separator);
+            Console.Write("Hit h for help.");
+
+            // Print the header
+            Console.SetCursorPosition(0, 0);
+            Console.WriteLine($"{separator}\n{_currentCategory.Name}:");
            
-            var linesLeft = Console.WindowHeight - Console.CursorTop - 1;
+            var linesLeft = Console.WindowHeight - Console.CursorTop - 2;
            
             // Handle long lists
             var startIndex = Math.Max(0, _selectedTodoIndex - linesLeft);
@@ -81,7 +155,7 @@ namespace ManagemeConsoleClient.App
                 }
 
                 Console.Write((_categoryTodos[i].IsDone ? "☑ " : "☐ " ).PadLeft(2));
-                Console.WriteLine(_categoryTodos[i].Content.PadRight(Console.WindowWidth-2));
+                Console.WriteLine(_categoryTodos[i].Content);
 
                 if (i == _selectedTodoIndex)
                 {
@@ -89,17 +163,17 @@ namespace ManagemeConsoleClient.App
                 }
             }
 
-            // -2 Comes from last two lines (sep + status)
-            linesLeft = Console.WindowHeight - Console.CursorTop - 2;
+            Console.SetCursorPosition(0, Console.WindowHeight-1);
+        }
 
-            for (int i = 0; i < linesLeft; ++i)
+        private async Task UpdateAsync()
+        {
+            _categoryTodos = await _client.GetTodosAsync(_currentCategory.Id);
+            if (_selectedTodoIndex < 0
+                || _selectedTodoIndex >= _categoryTodos.Count)
             {
-                Console.WriteLine("".PadRight(Console.WindowWidth));
+                _selectedTodoIndex = 0;
             }
-
-            Console.WriteLine("".PadRight(Console.WindowWidth, '='));
-
-            Console.Write("Hit h for help.".PadRight(Console.WindowWidth));
         }
 
         private void ClearCurrentLine()
@@ -126,6 +200,22 @@ namespace ManagemeConsoleClient.App
 
         private async Task ProcessKeyAsync(ConsoleKey key)
         {
+            if (key == ConsoleKey.Escape)
+            {
+                _state = AppState.Running;
+                return;
+            }
+
+            if (_state == AppState.Popup)
+            {
+                await _popup.ProcessKeyAsync(key);
+                if (! _popup.IsOpen)
+                {
+                    _state = AppState.Running;
+                }
+                return;
+            }
+
             switch (key)
             {
                 case ConsoleKey.J:
@@ -140,6 +230,10 @@ namespace ManagemeConsoleClient.App
 
                 case ConsoleKey.Enter:
                 case ConsoleKey.Spacebar:
+                    if (! _categoryTodos.Any())
+                    {
+                        break;
+                    }
                     await _client.ToggleTodoDoneAsync(
                         _categoryTodos[_selectedTodoIndex].Id
                     );
@@ -150,6 +244,9 @@ namespace ManagemeConsoleClient.App
                     {
                         break;
                     }
+
+                    _state = AppState.Input;
+
                     ClearCurrentLine();
                     Console.Write("Delete current TODO. Are you sure? (yN)");
 
@@ -160,12 +257,15 @@ namespace ManagemeConsoleClient.App
                             _categoryTodos[_selectedTodoIndex].Id
                         );
                     }
+
+                    _state = AppState.Running;
                     break;
                 
                 case ConsoleKey.A:
                     ClearCurrentLine();
                     Console.Write("Add TODO (Leave blank to cancel): ");
 
+                    _state = AppState.Input;
                     var content = Console.ReadLine();
                     if (! string.IsNullOrWhiteSpace(content))
                     {
@@ -177,16 +277,21 @@ namespace ManagemeConsoleClient.App
                             }
                         );
                     }
+                    _state = AppState.Running;
                     break;
 
                 case ConsoleKey.H:
+                    _state = AppState.Input;
+
                     Console.Clear();
                     Console.WriteLine(File.ReadAllText("res/help.txt"));
                     Console.ReadKey(intercept: true);
+
+                    _state = AppState.Running;
                     break;
 
                 case ConsoleKey.X:
-                    IsRunning = false;
+                    _state = AppState.Stopped;
                     break;
             }
         }

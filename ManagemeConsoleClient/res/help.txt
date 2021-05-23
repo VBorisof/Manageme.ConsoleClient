@@ -2,10 +2,9 @@
 Manageme Console Client v.0.1.0
 
 Controls:
-  - A        -- Add item.
-  - D        -- Delete item.
-  - J/Down   -- Select next item.
-  - K/Up     -- Select previous item.
+  - kjhl OR Up/Down/Left/Right -- Navigation
+  - A        -- Add Item / Aknowledge Reminder
+  - D        -- Delete item / Dismiss Reminder
   - Ret/Spce -- Toggle item complete.
   - X        -- Quit.
   - H        -- Display this help menu.

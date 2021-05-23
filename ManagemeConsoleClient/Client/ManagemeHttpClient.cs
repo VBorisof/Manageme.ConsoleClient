@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ManagemeConsoleClient.App;
 using ManagemeConsoleClient.Exceptions;
 using ManagemeConsoleClient.Forms;
 using ManagemeConsoleClient.ViewModels;
@@ -51,6 +52,16 @@ namespace ManagemeConsoleClient.Client
             }
 
             return await GetAsync<List<TodoViewModel>>($"todo/{categoryId}");
+        }
+
+        public async Task<List<ReminderViewModel>> GetRemindersAsync()
+        {
+            if (!IsLoggedIn)
+            {
+                throw new NotLoggedInException(); 
+            }
+
+            return await GetAsync<List<ReminderViewModel>>($"reminder");
         }
 
         public async Task<List<CategoryViewModel>> GetCategoriesAsync()
