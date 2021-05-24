@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ManagemeConsoleClient.Client;
 
 namespace ManagemeConsoleClient.App
 {
@@ -16,51 +15,25 @@ namespace ManagemeConsoleClient.App
         protected int _height;
         private string _title;
 
-        private ManagemeHttpClient _client;
-
         protected List<Button> Buttons { get; set; }
         private int _selectedButtonIndex;
 
-        public Window(
-            ManagemeHttpClient client,
-            string title,
-            int left,
-            int top,
-            int width,
-            int height
-        )
+        public Window(string title)
         {
             _title = title;
+            _selectedButtonIndex = 0;
+            Buttons = new List<Button>();
+        }
+
+
+        public void SetWindow(int left, int top, int width, int height)
+        {
             _left = left;
             _top = top;
             _width = width;
             _height = height;
-            
-
-            _selectedButtonIndex = 0;
         }
-
         
-        private void SelectNextButton()
-        {
-            Buttons[_selectedButtonIndex].IsSelected = false;
-            if (++_selectedButtonIndex >= Buttons.Count)
-            {
-                _selectedButtonIndex = 0;
-            }
-            Buttons[_selectedButtonIndex].IsSelected = true;
-        }
-
-        private void SelectPrevButton()
-        {
-            Buttons[_selectedButtonIndex].IsSelected = false;
-            if (--_selectedButtonIndex < 0)
-            {
-                _selectedButtonIndex = Buttons.Count - 1;
-            }
-            Buttons[_selectedButtonIndex].IsSelected = true;
-        }
-
         public virtual void Render()
         {
             var originalLeft = Console.CursorLeft;
@@ -125,5 +98,26 @@ namespace ManagemeConsoleClient.App
                     break;
             } 
         }
+
+        private void SelectNextButton()
+        {
+            Buttons[_selectedButtonIndex].IsSelected = false;
+            if (++_selectedButtonIndex >= Buttons.Count)
+            {
+                _selectedButtonIndex = 0;
+            }
+            Buttons[_selectedButtonIndex].IsSelected = true;
+        }
+
+        private void SelectPrevButton()
+        {
+            Buttons[_selectedButtonIndex].IsSelected = false;
+            if (--_selectedButtonIndex < 0)
+            {
+                _selectedButtonIndex = Buttons.Count - 1;
+            }
+            Buttons[_selectedButtonIndex].IsSelected = true;
+        }
+
     }
 }

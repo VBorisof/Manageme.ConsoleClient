@@ -1,9 +1,12 @@
+using System;
+
 namespace ManagemeConsoleClient.Forms
 {
-    public class TodoForm
+    public class ReminderForm
     {
         public long CategoryId { get; set; }
         public string Content { get; set; }
+        public DateTime Time { get; set; }
     }
 }
 

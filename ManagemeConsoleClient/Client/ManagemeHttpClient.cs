@@ -5,7 +5,6 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using ManagemeConsoleClient.App;
 using ManagemeConsoleClient.Exceptions;
 using ManagemeConsoleClient.Forms;
 using ManagemeConsoleClient.ViewModels;
@@ -84,6 +83,26 @@ namespace ManagemeConsoleClient.Client
             await PostAsync($"todo", form);
         }
 
+        public async Task AddReminderAsync(ReminderForm form)
+        {
+            if (!IsLoggedIn)
+            {
+                throw new NotLoggedInException(); 
+            }
+
+            await PostAsync($"reminder", form);
+        }
+
+        public async Task SnoozeReminderAsync(SnoozeReminderForm form)
+        {
+            if (!IsLoggedIn)
+            {
+                throw new NotLoggedInException(); 
+            }
+
+            await PutAsync($"reminder", form);
+        }
+
         public async Task ToggleTodoDoneAsync(long todoId)
         {
             if (!IsLoggedIn)
@@ -92,6 +111,16 @@ namespace ManagemeConsoleClient.Client
             }
 
             await PutAsync($"todo/{todoId}", new {});
+        }
+        
+        public async Task AcknowledgeReminderAsync(long reminderId)
+        {
+            if (!IsLoggedIn)
+            {
+                throw new NotLoggedInException(); 
+            }
+
+            await PutAsync($"reminder/{reminderId}", new {});
         }
 
         public async Task DeleteTodoAsync(long todoId)
@@ -118,7 +147,8 @@ namespace ManagemeConsoleClient.Client
                 else
                 {
                     throw new HttpRequestException(
-                        $"Unsuccessful Response: {resp.StatusCode}"
+                        $"Unsuccessful Response: {resp.StatusCode}\n"
+                        + $"{(await resp.Content.ReadAsStringAsync())}"
                     );
                 }
             }
@@ -137,7 +167,8 @@ namespace ManagemeConsoleClient.Client
                 if (!resp.IsSuccessStatusCode)
                 {
                     throw new HttpRequestException(
-                        $"Unsuccessful Response: {resp.StatusCode}"
+                        $"Unsuccessful Response: {resp.StatusCode}\n"
+                        + $"{(await resp.Content.ReadAsStringAsync())}"
                     );
                 }
             }
@@ -166,7 +197,8 @@ namespace ManagemeConsoleClient.Client
                 else
                 {
                     throw new HttpRequestException(
-                        $"Unsuccessful Response: {resp.StatusCode}"
+                        $"Unsuccessful Response: {resp.StatusCode}\n"
+                        + $"{(await resp.Content.ReadAsStringAsync())}"
                     );
                 }
             }
@@ -190,7 +222,8 @@ namespace ManagemeConsoleClient.Client
                 if (!resp.IsSuccessStatusCode)
                 {
                     throw new HttpRequestException(
-                        $"Unsuccessful Response: {resp.StatusCode}"
+                        $"Unsuccessful Response: {resp.StatusCode}\n"
+                        + $"{(await resp.Content.ReadAsStringAsync())}"
                     );
                 }
             }
@@ -219,7 +252,8 @@ namespace ManagemeConsoleClient.Client
                 else
                 {
                     throw new HttpRequestException(
-                        $"Unsuccessful Response: {resp.StatusCode}"
+                        $"Unsuccessful Response: {resp.StatusCode}\n"
+                        + $"{(await resp.Content.ReadAsStringAsync())}"
                     );
                 }
             }
@@ -243,7 +277,8 @@ namespace ManagemeConsoleClient.Client
                 if (!resp.IsSuccessStatusCode)
                 {
                     throw new HttpRequestException(
-                        $"Unsuccessful Response: {resp.StatusCode}"
+                        $"Unsuccessful Response: {resp.StatusCode}\n"
+                        + $"{(await resp.Content.ReadAsStringAsync())}"
                     );
                 }
             }
@@ -267,7 +302,8 @@ namespace ManagemeConsoleClient.Client
                 else
                 {
                     throw new HttpRequestException(
-                        $"Unsuccessful Response: {resp.StatusCode}"
+                        $"Unsuccessful Response: {resp.StatusCode}\n"
+                        + $"{(await resp.Content.ReadAsStringAsync())}"
                     );
                 }
             }
