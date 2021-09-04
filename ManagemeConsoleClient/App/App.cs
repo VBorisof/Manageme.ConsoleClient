@@ -24,14 +24,20 @@ namespace ManagemeConsoleClient.App
        
         private ReminderPopup _popup;
 
-        public async Task InitAsync()
+        public async Task InitAsync(LoginForm form)
         {
             _client = new ManagemeHttpClient();
+            await _client.LoginAsync(form);
 
-            await _client.LoginAsync(new LoginForm("Seva", "123"));
             _categories = await _client.GetCategoriesAsync();
 
-            _currentCategory = _categories.First();
+            _currentCategory = _categories.FirstOrDefault();
+    
+            if (_currentCategory == null)
+            {
+                _currentCategory = await _client.AddCategoryAsync(new CategoryForm("General"));
+            }
+
             _categoryTodos = await _client.GetTodosAsync(_currentCategory.Id);
                 
             _popup = new ReminderPopup(_client);

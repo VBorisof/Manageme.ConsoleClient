@@ -104,6 +104,7 @@ namespace ManagemeConsoleClient.App
                     // And remove it...
                     
                     _isRenderSnoozeMenu = true;
+                    Render();
 
                     var timeChoice = Console.ReadKey(intercept: true).Key;
                     DateTime time;

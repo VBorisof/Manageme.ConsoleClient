@@ -73,6 +73,16 @@ namespace ManagemeConsoleClient.Client
             return await GetAsync<List<CategoryViewModel>>($"category");
         }
 
+        public async Task<CategoryViewModel> AddCategoryAsync(CategoryForm form)
+        {
+            if (!IsLoggedIn)
+            {
+                throw new NotLoggedInException(); 
+            }
+
+            return await PostAsync<CategoryViewModel>("category", form);
+        }
+
         public async Task AddTodoAsync(TodoForm form)
         {
             if (!IsLoggedIn)
